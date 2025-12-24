@@ -17,23 +17,16 @@ def format_bold(text):
 
     return formatted
 
-
 def generate_response1(prompt):
-    # Force short explanations
+    # Add a persona instruction to the Gemini prompt
+    persona_instruction = "Answer as JARVIS, the British AI butler. Be concise. "
+    full_prompt = persona_instruction + prompt
+    
     if "explain" in prompt.lower() or "what is" in prompt.lower():
-        prompt += " in 2 or 3 lines"
+        full_prompt += " in 2 or 3 lines"
 
     response = client.models.generate_content(
         model="gemini-2.5-flash",
-        contents=prompt
+        contents=full_prompt
     )
-def generate_response2(prompt):
-    # Force short explanations
-    prompt += f" explain in brief with one or two line what a {prompt.lower()} is "
-
-    response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=prompt
-    )
-
     return format_bold(response.text)

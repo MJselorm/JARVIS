@@ -2,13 +2,26 @@ import speech_recognition  as sr
 import datetime
 import webbrowser
 import subprocess
-from brain import generate_response1,generate_response2
+from brain import generate_response1
 from speech import speak, conversation
-from arduino_control import ArduinoController    
+from arduino_control import ArduinoController  
+from chatbox import  JarvisEngine  
+
+# --- INITIALIZE ONCE ---
+jarvis = JarvisEngine()
+arduino = ArduinoController(port='COM6')
+# Try to connect once at startup
+try:
+    arduino.connect()
+except:
+    print("Warning: Arduino not found on COM6")
+
+# Speech recognizer setup
 r=sr.Recognizer()
 r.pause_threshold=0.8
 mic=sr.Microphone(device_index=1)
 r.dynamic_energy_adjustment_damping=True
+
 
 awake=False
 
@@ -26,7 +39,7 @@ try:
             try:
                 audio = r.listen(source, timeout=5, phrase_time_limit=4)
                 text = r.recognize_google(audio).lower()
-                print(f"Heard: {text}")
+                print(f"You: {text}")
                 
                 # --- WAKE WORD LOGIC ---
                 if not awake:
@@ -37,12 +50,11 @@ try:
                 
                     # --- ACTIVE COMMAND LOGIC ---
                 if awake:
-                    arduino = ArduinoController(port='COM6')
-                    arduino.connect()
                     if "time" in text:
                         now = datetime.datetime.now().strftime("%I:%M %p")
                         speak(f"Sir, the time is {now}")
-                    
+                        
+
                     
                     #jarvis tell open youtube
                     elif "open youtube" in text:
@@ -51,49 +63,37 @@ try:
                         
                         
                     #jarvis tell open vs code
-                    elif "open vs code" in text or "open visual studio code" in text:
-                        if "open vs code" in text:
-                            speak("Opening VS Code sir")
-                        if "open visual studio code" in text:
-                            speak("Opening Visual Studio Code sir")
-                        subprocess.Popen(r"C:\Users\USER\AppData\Local\Programs\Microsoft VS Code\Code.exe")
-
-                    elif "close vs code" in text or "close visual studio code" in text:
-                        if "close vs code" in text:
-                            speak("Closing VS Code sir")
-                        if "close visual studio code" in text:
-                            speak("Closing Visual Studio Code sir")
-                        subprocess.Popen("taskkill /IM Code.exe /F")
-                    #jarvis thinking and responding
-                    elif "what is " in text or "who is " in text or "tell me about " in text:
-                        print("you said:",text)
-                        response=generate_response1(text)
-                        speak(response)
+                    elif "visual studio code" in text or "vs code" in text:
+                        if "close" in text:
+                            speak("Terminating the environment, Sir.")
+                            subprocess.Popen("taskkill /IM Code.exe /F", shell=True)
+                        else:
+                            speak("Initializing the workspace.")
+                            subprocess.Popen(r"C:\Users\USER\AppData\Local\Programs\Microsoft VS Code\Code.exe")
+                    
+                    
+                    # --- ARDUINO CONTROL ---
+                    elif "light" in text:
+                        if "on" in text:
+                            arduino.light_on()
+                            speak("turning on the light sir")
+                        else:
+                            arduino.light_off()
+                            speak("turning off the light sir")
+                    
                     #jarvis go to sleep
                     elif "sleep" in text:
                         print("you said:",text)
                         speak("going to sleep sir")
                         print("jarvis: going to sleep sir")
                         awake=False
-                    
-                    # --- ARDUINO CONTROL ---
-                    elif "turn on the light" in text or "turn on light" in text:
-                        print("you said:",text)
-                        speak("turning on the light sir")
-                        arduino.light_on()
-                    elif "turn off the light" in text or "turn off light" in text:
-                        print("you said:",text)
-                        speak("turning off the light sir")
-                        arduino.light_off()
                         
                     # --- FALLBACK TO AI BRAIN ---
                     else:
-                        # This allows him to answer anything else using your Gemini brain
-                        speak(f"did u say {text}")
-                        if "yes" in text or "yeah" in text or "correct" in text:
-                                response = generate_response2(text)
-                                print(response)
-                                speak(response)
+                        # This allows him to answer anything else using your Ollama brain
+                        reply = jarvis.ask(text)
+                        print(f"JARVIS: {reply}")
+                        speak(reply)
                     
             
 
@@ -109,3 +109,4 @@ try:
 except KeyboardInterrupt:
     arduino.close()
     print("shutting down jarvis.......")
+    speak("Shutting down, Sir.")
