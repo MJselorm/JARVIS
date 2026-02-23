@@ -11,6 +11,7 @@ from chatbox import  JarvisEngine
 jarvis = JarvisEngine()
 controller = ESPController(ESP_IP)
 
+
 # Speech recognizer setup
 r=sr.Recognizer()
 r.pause_threshold=0.8
@@ -87,27 +88,19 @@ try:
                     
                     # --- ESP control ---
                     elif "light" in text:
-                        if "on" in text:
-                            controller.led_on()
-                            speak("turning on the light sir")
-                        elif "red" in text:
-                            controller.led_red()
-                            speak("turning on the red light sir")
-                        elif "blue" in text:
-                            controller.led_blue()
-                            speak("turning on the blue light sir")
-                        elif "green" in text:
-                            controller.led_green()
-                            speak("turning on the green light sir")
-                        elif "white" in text:
-                            controller.led_white()
-                            speak("turning on the white light sir")
-                        elif "yellow" in text:
-                            controller.led_yellow()
-                            speak("turning on the yellow light sir")
-                        else:
-                            controller.led_off()
-                            speak("turning off the light sir")
+                            if "red" in text:
+                                controller.red_light()
+                                speak("turning on the red light sir")
+                            elif "blue" in text:
+                                controller.blue_light()
+                                speak("turning on the blue light sir")
+                            elif "green" in text:
+                                controller.green_light()
+                                speak("turning on the green light sir")
+
+                            else:
+                                controller.led_off()
+                                speak("turning off the light sir")
 
                     
                     #jarvis go to sleep
@@ -135,6 +128,8 @@ try:
                 print("connection error")
             except Exception as e:
                 print(f"Error: {e}")
+                speak("Sorry Sir, an error occurred.")
 except KeyboardInterrupt:
     print("shutting down jarvis.......")
     speak("Shutting down, Sir.")
+    controller.led_off()
